@@ -1,80 +1,93 @@
 <?php
 
-class EbayConfig
+class AliexpressConfig
 {
 
 	private $this_module = false;
 
 
-        public function __construct($mod)
-        {
-                $this->this_module = $mod;
+	public function __construct($mod)
+	{
+		$this->this_module = $mod;
 
-        }
+	}
 
 
 	public function checkConfiguration()
-        {
-                $config = Configuration::getMultiple(array(
-                                                'Bitibe_ebay_app_id',
-                                                'Bitibe_ebay_campaign_id'
-                                                ));
+	{
+		$config = Configuration::getMultiple(array(
+					'Bitibe_aliexpress_app_key',
+					'Bitibe_aliexpress_app_secret',
+					'Bitibe_aliexpress_tracking_id'
+					));
 
-                        if (array_key_exists('Bitibe_ebay_app_id', $config)
-                                        && array_key_exists('Bitibe_ebay_campaign_id', $config)
-                           )
-                        {
-                                if (empty($config['Bitibe_ebay_app_id']))
-                                        $this->this_module->warning = $this->this_module->l('Please provide Ebay App Id');
+		if (array_key_exists('Bitibe_aliexpress_app_key', $config)
+				&& array_key_exists('Bitibe_aliexpress_app_secret', $config)
+				&& array_key_exists('Bitibe_aliexpress_tracking_id', $config)
+		   )
+		{
+			if (empty($config['Bitibe_aliexpress_app_key']))
+				$this->this_module->warning = $this->this_module->l('Please provide Aliexpress App Key');
 
-                                if (empty($config['Bitibe_ebay_campaign_id']))
-                                        $this->this_module->warning = $this->this_module->l('Please provide Ebay Campaign Id');
+			if (empty($config['Bitibe_aliexpress_app_secret']))
+				$this->this_module->warning = $this->this_module->l('Please provide Aliexpress App Secret');
+	
+			if (empty($config['Bitibe_aliexpress_tracking_id']))
+                                $this->this_module->warning = $this->this_module->l('Please provide Aliexpress Tracking Id');
 
+		}else{
+			$this->this_module->warning = $this->this_module->l('Missing configuration. Please configure module ' . $this->this_module->class_module_name);
+		}
 
-                        }else{
-                                $this->this_module->warning = $this->this_module->l('Missing configuration. Please configure module ' . $this->this_module->class_module_name);
-                        }
+	}
 
-        }
-
-	public function getEbayContent()
+	public function getAliexpressContent()
 	{
 
 		$output = null;
 
-		if (Tools::isSubmit('ebayconfigsubmit'.$this->this_module->name))
+		if (Tools::isSubmit('aliexpressconfigsubmit'.$this->this_module->name))
 		{
 
-			$app_id = strval(Tools::getValue('Bitibe_ebay_app_id'));
-			$campaign_id = strval(Tools::getValue('Bitibe_ebay_campaign_id'));
+			$app_key = strval(Tools::getValue('Bitibe_aliexpress_app_key'));
+			$app_secret = strval(Tools::getValue('Bitibe_aliexpress_app_secret'));
+			$tracking_id = strval(Tools::getValue('Bitibe_aliexpress_tracking_id'));
 
-			if (!empty($app_id))
+			if (!empty($app_key))
 			{
-				Configuration::updateValue('Bitibe_ebay_app_id', $app_id);
+				Configuration::updateValue('Bitibe_aliexpress_app_key', $app_key);
 			}else{
-				$output .= $this->this_module->displayError($this->this_module->l('App Id can not be empty'));
+				$output .= $this->this_module->displayError($this->this_module->l('App key can not be empty'));
 			}
 
-			if (!empty($campaign_id))
+			if (!empty($app_secret))
 			{
-				Configuration::updateValue('Bitibe_ebay_campaign_id', $campaign_id);
+				Configuration::updateValue('Bitibe_aliexpress_app_secret', $app_secret);
 			}else{
-				$output .= $this->this_module->displayError($this->this_module->l('Campaign id can not be empty'));
+				$output .= $this->this_module->displayError($this->this_module->l('App Secret can not be empty'));
 			}
+
+			if (!empty($tracking_id))
+                        {
+                                Configuration::updateValue('Bitibe_aliexpress_tracking_id', $tracking_id);
+                        }else{
+                                $output .= $this->this_module->displayError($this->this_module->l('Tracking Id can not be empty'));
+                        }
 		}
 
-		if (Tools::isSubmit('ebaysearchsubmit'.$this->this_module->name))
+		if (Tools::isSubmit('aliexpresssearchsubmit'.$this->this_module->name))
 		{
-			$app_id = NULL;
-			$campaign_id = NULL;
+			$app_key = NULL;
+                        $app_secret = NULL; 
+                        $tracking_id = NULL;
 			$is_valid = true;
-			$ebay_category = strval(Tools::getValue('Bitibe_ebay_category'));
-			$search_keyword = strval(Tools::getValue('Bitibe_ebay_keyword'));
-			$ebay_count = strval(Tools::getValue('Bitibe_ebay_fetch_count'));
-			$prestashop_category = strval(Tools::getValue('Bitibe_ebay_prestashop_category'));
+			$aliexpress_category = strval(Tools::getValue('Bitibe_aliexpress_category'));
+			$search_keyword = strval(Tools::getValue('Bitibe_aliexpress_keyword'));
+			$aliexpress_count = strval(Tools::getValue('Bitibe_aliexpress_fetch_count'));
+			$prestashop_category = strval(Tools::getValue('Bitibe_aliexpress_prestashop_category'));
 
-			if(empty($ebay_category)){
-				$output .= $this->this_module->displayError($this->this_module->l('Please select Ebay Category'));
+			if(empty($aliexpress_category)){
+				$output .= $this->this_module->displayError($this->this_module->l('Please select Aliexpress Category'));
 				$is_valid = false;
 			}
 
@@ -83,10 +96,10 @@ class EbayConfig
 				$is_valid = false;
 			}
 
-			if(empty($ebay_count)){
+			if(empty($aliexpress_count)){
 				$output .= $this->this_module->displayError($this->this_module->l('Please ennter number of products to be fetched'));
 				$is_valid = false;
-			}else if(!is_numeric($ebay_count)){
+			}else if(!is_numeric($aliexpress_count)){
 				$output .= $this->this_module->displayError($this->this_module->l('Number of products to be fetched is not numeric'));
 				$is_valid = false;
 			}
@@ -97,26 +110,27 @@ class EbayConfig
 			}
 
 			if($is_valid){
-				$app_id = Configuration::get('Bitibe_ebay_app_id');
-				$campaign_id = Configuration::get('Bitibe_ebay_campaign_id');
+				$app_key = Configuration::get('Bitibe_aliexpress_app_key');
+				$app_secret = Configuration::get('Bitibe_aliexpress_app_secret');
+				$tracking_id = Configuration::get('Bitibe_aliexpress_tracking_id');
 
-				if(empty($app_id) || empty($campaign_id)){
-					$output .= $this->this_module->displayError($this->this_module->l('Missing configuration. Please set Ebay setting'));
+				if(empty($app_key) || empty($app_secret) || empty($tracking_id)){
+					$output .= $this->this_module->displayError($this->this_module->l('Missing configuration. Please set Aliexpress setting'));
 					$is_valid = false;
 				}
 			}
 
 			if($is_valid){
-				$ebay = new ebayAPI($app_id, $campaign_id);
+				$aliexpress = new aliexpressAPI($app_key, $app_secret, $tracking_id);
 
 				$arr = array();
-				$page_count = $ebay_count/10;
+				$page_count = $aliexpress_count/10;
 				if($page_count == 0){
 					$page_count = 1;
 				}
 
 				for($i=1; $i<=$page_count; $i++){
-					$arr = $ebay->searchProductHelper($search_keyword, $ebay_category, $i);
+					$arr = $aaliexpress->searchProductHelper($search_keyword, $aliexpress_category, $i);
 
 					foreach($arr as $p){
 
@@ -133,7 +147,7 @@ class EbayConfig
 
 							if($product_id != 0){
 								$this->this_module->updateProduct("affiliate_product_id", $p['asin'], $product_id);
-								$this->this_module->updateProduct("affiliate_website", "ebay.com", $product_id);
+								$this->this_module->updateProduct("affiliate_website", "aliexpress.com", $product_id);
 
 								$imageAdd = new ImageAdd();
 								try{
@@ -151,7 +165,7 @@ class EbayConfig
 	}
 
 
-	public function ebayForm()
+	public function aliexpressForm()
 	{
 		$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 
@@ -166,12 +180,12 @@ class EbayConfig
 					);
 		}
 
-		$ebay_category = array();
-		$fetched_categ = $this->this_module->fetchAffiliateCategory('ebay.com');
+		$aliexpress_category = array();
+		$fetched_categ = $this->this_module->fetchAffiliateCategory('aliexpress.com');
 
 		foreach ($fetched_categ as $categ)
 		{
-			$ebay_category[] = array( 
+			$aliexpress_category[] = array( 
 					"id_option" => $categ['category_id'],
 					"name" => $categ['category_name']
 					);
@@ -179,39 +193,39 @@ class EbayConfig
 
 		$fields_form[0]['form'] = array(
 				'legend' => array( 
-					'title' => $this->this_module->l('Ebay Fetch Product'),
+					'title' => $this->this_module->l('Aliexpress Fetch Product'),
 					),
 				'input' => array(
 					array(
 						'type' => 'select',
 						'label' => $this->this_module->l('Search in Category'),
-						'desc' => $this->this_module->l('Select Ebay Category'),
-						'name' => 'Bitibe_ebay_category',
+						'desc' => $this->this_module->l('Select Aliexpress Category'),
+						'name' => 'Bitibe_aliexpress_category',
 						'required' => true,
 						'options' => array(
-							'query' => $ebay_category,
+							'query' => $aliexpress_category,
 							'id' => 'id_option',
 							'name' => 'name'
 							)
 					     ),
 					array(
 						'type' => 'text',
-						'label' => $this->this_module->l('Search keyword for Ebay'),
-						'name' => 'Bitibe_ebay_keyword',
+						'label' => $this->this_module->l('Search keyword for Aliexpress'),
+						'name' => 'Bitibe_aliexpress_keyword',
 						'required' => true
 					     ),
 					array(
 						'type' => 'text',
 						'label' => $this->this_module->l('Number of products to be fetched'),
 						'desc' => $this->this_module->l('Choose multiple of 10'),
-						'name' => 'Bitibe_ebay_fetch_count',
+						'name' => 'Bitibe_aliexpress_fetch_count',
 						'required' => true
 					     ),
 					array(
 							'type' => 'select',
 							'label' => $this->this_module->l('Save in Category'),
 							'desc' => $this->this_module->l('Choose your store category'),
-							'name' => 'Bitibe_ebay_prestashop_category',
+							'name' => 'Bitibe_aliexpress_prestashop_category',
 							'required' => true,
 							'options' => array(
 								'query' => $presta_category,
@@ -242,7 +256,7 @@ class EbayConfig
 		$helper->title = $this->this_module->displayName;
 		$helper->show_toolbar = true;        // false -> remove toolbar
 		$helper->toolbar_scroll = true;      // yes - > Toolbar is always visible on the top of the screen.
-		$helper->submit_action = 'ebaysearchsubmit'.$this->this_module->name;
+		$helper->submit_action = 'aliexpresssearchsubmit'.$this->this_module->name;
 
 		$helper->toolbar_btn = array(
 				'save' =>
@@ -257,37 +271,43 @@ class EbayConfig
 					)
 				);
 
-		$helper->fields_value['Bitibe_ebay_fetch_count'] = 20;
+		$helper->fields_value['Bitibe_aliexpress_fetch_count'] = 20;
 
 		return $helper->generateForm($fields_form);
 	}
 
-	public function ebayConfig()
+	public function aliexpressConfig()
 	{
 		$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 
 		$fields_form[0]['form'] = array(
 				'legend' => array(
-					'title' => $this->this_module->l('Ebay Setting'),
+					'title' => $this->this_module->l('Aliexpress Setting'),
 					),
 				'input' => array(
 					array(
 						'type' => 'text',
-						'label' => $this->this_module->l('Ebay App Id (for ebay.com)'),
-						'name' => 'Bitibe_ebay_app_id',
+						'label' => $this->this_module->l('Aliexpress App Key (for portals.aliexpress.com)'),
+						'name' => 'Bitibe_aliexpress_app_key',
 						'required' => true
 					     ),
 					array(
 						'type' => 'text',
-						'label' => $this->this_module->l('Ebay Campaign Id (for ebay.com)'),
-						'name' => 'Bitibe_ebay_campaign_id',
+						'label' => $this->this_module->l('Aliexpress App Key (for portals.aliexpress.com)'),
+						'name' => 'Bitibe_aliexpress_app_secret',
 						'required' => true
-					     )
+					     ),
+					array(
+                                                'type' => 'text',
+                                                'label' => $this->this_module->l('Aliexpress Tracking Id (for portals.aliexpress.com)'),
+                                                'name' => 'Bitibe_aliexpress_tracking_id',
+                                                'required' => true
+                                             )
 					),
 				'submit' => array(
-						'title' => $this->this_module->l('Save'),
-						'class' => 'btn btn-default pull-right'
-						)
+					'title' => $this->this_module->l('Save'),
+					'class' => 'btn btn-default pull-right'
+					)
 					);
 
 
@@ -306,7 +326,7 @@ class EbayConfig
 		$helper->title = $this->this_module->displayName;
 		$helper->show_toolbar = true;        // false -> remove toolbar
 		$helper->toolbar_scroll = true;      // yes - > Toolbar is always visible on the top of the screen.
-		$helper->submit_action = 'ebayconfigsubmit'.$this->this_module->name;
+		$helper->submit_action = 'aliexpressconfigsubmit'.$this->this_module->name;
 		$helper->toolbar_btn = array(
 				'save' =>
 				array(
@@ -321,9 +341,9 @@ class EbayConfig
 				);
 
 		// Load current value
-		$helper->fields_value['Bitibe_ebay_app_id'] = Configuration::get('Bitibe_ebay_app_id');
-		$helper->fields_value['Bitibe_ebay_campaign_id'] = Configuration::get('Bitibe_ebay_campaign_id');
-
+		$helper->fields_value['Bitibe_aliexpress_app_key'] = Configuration::get('Bitibe_aliexpress_app_key');
+		$helper->fields_value['Bitibe_aliexpress_app_secret'] = Configuration::get('Bitibe_aliexpress_app_secret');
+                $helper->fields_value['Bitibe_aliexpress_tracking_id'] = Configuration::get('Bitibe_aliexpress_tracking_id');
 
 		return $helper->generateForm($fields_form);
 	}

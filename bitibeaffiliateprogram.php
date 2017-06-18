@@ -14,13 +14,21 @@ if(file_exists(__DIR__."/affiliate/ebay/ebayAPI.php")){
 	require_once(__DIR__."/affiliate/ebay/ebayConfig.php");
 }
 
+if(file_exists(__DIR__."/affiliate/aliexpress/aliexpressAPI.php")){
+        require_once(__DIR__."/affiliate/aliexpress/aliexpressAPI.php");
+        require_once(__DIR__."/affiliate/aliexpress/aliexpressConfig.php");
+}
+
+
 
 class BitibeAffiliateProgram extends Module
 {
 	public $amazon_allowed = false;
 	public $ebay_allowed = false;
+	public $aliexpress_allowed = false;
 	public $class_module_name = 'bitibeaffiliateprogram'; 
 	public $amazonConfig;
+	public $aliexpressConfig;
 	public $ebayConfig;
 
 	public function __construct()
@@ -42,6 +50,10 @@ class BitibeAffiliateProgram extends Module
                         $this->ebay_allowed = true;
                 } 
 
+		if(file_exists(__DIR__."/affiliate/aliexpress/aliexpressAPI.php")){
+                        $this->aliexpress_allowed = true;
+                }
+
 		$this->displayName = $this->l('BitibeAffiliateProgram');
 		$this->description = $this->l('Affilite programs wirh e-commerce');
 
@@ -58,6 +70,12 @@ class BitibeAffiliateProgram extends Module
 			$this->ebayConfig = new EbayConfig($this);
 			$this->ebayConfig->checkConfiguration();
                 }
+
+		if($this->aliexpress_allowed == true){
+                        $this->aliexpressConfig = new AliexpressConfig($this);
+                        $this->aliexpressConfig->checkConfiguration();
+                }
+
 
 	}
 
@@ -80,6 +98,13 @@ class BitibeAffiliateProgram extends Module
                                 Configuration::updateValue('Bitibe_ebay_compaign_id', '');
 
 		}
+
+		if($this->amazon_allowed == true){
+			$result = $result && Configuration::updateValue('Bitibe_aliexpress_app_key', '') &&
+			Configuration::updateValue('Bitibe_aliexpress_app_secret', '') &&
+			Configuration::updateValue('Bitibe_aliexpress_tracking_id', '');
+		}
+
 
 		return $result;
 	}
@@ -188,6 +213,39 @@ class BitibeAffiliateProgram extends Module
 			Db::getInstance()->insert('affiliate_category', array( 'category_id' => pSQL('99'), 'category_name' => pSQL('Everything Else'), 'site_name'  => 'ebay.com'));
 		}
 
+		if($aliexpress_allowed == true){
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Automobiles and Motorcycles'), 'category_id' => pSQL('34'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Beauty and Health'), 'category_id' => pSQL('66'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Computer and Office'), 'category_id' => pSQL('7'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Construction and Real Estate'), 'category_id' => pSQL('13'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Consumer Electronics'), 'category_id' => pSQL('44'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Electrical Equipment and Supplies'), 'category_id' => pSQL('5'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Electronic Components and Supplies'), 'category_id' => pSQL('502'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Food'), 'category_id' => pSQL('2'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Furniture'), 'category_id' => pSQL('1503'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Hair and Accessories'), 'category_id' => pSQL('200003655'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Hardware'), 'category_id' => pSQL('42'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Home and Garden'), 'category_id' => pSQL('15'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Home Appliances'), 'category_id' => pSQL('6'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Industry and Business'), 'category_id' => pSQL('200001996'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Jewelry and Accessories'), 'category_id' => pSQL('36'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Lights and Lighting'), 'category_id' => pSQL('39'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Luggage and Bags'), 'category_id' => pSQL('1524'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Mother and Kids'), 'category_id' => pSQL('1501'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Office and School Supplies'), 'category_id' => pSQL('21'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Phones and Telecommunications'), 'category_id' => pSQL('509'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Security and Protection'), 'category_id' => pSQL('30'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Shoes'), 'category_id' => pSQL('322'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Special Category'), 'category_id' => pSQL('200001075'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Sports and Entertainment'), 'category_id' => pSQL('18'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Tools'), 'category_id' => pSQL('1420'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Toys and Hobbies'), 'category_id' => pSQL('26'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Travel and Coupon Services'), 'category_id' => pSQL('200003498'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Watches'), 'category_id' => pSQL('1511'), 'site_name'  => 'aliexpress.com'));
+			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Weddings and Events'), 'category_id' => pSQL('320'), 'site_name'  => 'aliexpress.com'));
+
+		}
+
 		return true;
 	}
 
@@ -234,6 +292,10 @@ class BitibeAffiliateProgram extends Module
 
 		if($this->ebay_allowed == true){
                         $output.=$this->ebayConfig->getEbayContent().$this->ebayConfig->ebayConfig().$this->ebayConfig->ebayForm();
+                }
+
+		if($this->aliexpress_allowed == true){
+                        $output.=$this->aliexpressConfig->getAliexpressContent().$this->aliexpressConfig->aliexpressConfig().$this->aliexpressConfig->aliexpressForm();
                 }
 
 		return $output;
