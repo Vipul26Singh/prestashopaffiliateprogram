@@ -1,11 +1,44 @@
 <?php
 
-if(file_exists("./amazonAPI.php")){
-                        include("./amazonAPI.php");
+if(file_exists(__DIR__."/affiliate/amazonAPI.php")){
+                        require_once(__DIR__."/affiliate/amazonAPI.php");
               }
+
 
 if (!defined('_PS_VERSION_'))
 exit;
+
+
+class ImageAdd extends AdminImportController
+{
+
+	public function insertImageInPrestashop($id_product, $url, $name_photo)
+	{
+		$shops = Shop::getShops(true, null, true);
+		$image = new ImageCore();
+		$image->id_product = $id_product;
+		$image->position = Image::getHighestPosition($id_product) + 1;
+		$image->cover = true;
+		$tmp = explode(".", $name_photo);
+		$name_photo_product = "";
+		$name_for_legend = "";
+		if (count($tmp) == 1) {
+			$name_photo_product = trim($url) . $name_photo . ".jpg";
+			$name_for_legend = $name_photo . ".jpg";
+		} else {
+			$name_photo_product = trim($url) . $name_photo;
+			$name_for_legend = $name_photo;
+		}
+		$image->legend = array('1' => trim($name_for_legend));
+		if ($image->validateFields(false, true) === true && $image->validateFieldsLang(false, true) === true && $image->add()) {
+			$image->associateTo($shops);
+			if (!$this->copyImg($id_product, $image->id, $name_photo_product, 'products')) {
+				$image->delete();
+			}
+		}
+		return $image->id;
+	}
+}
 
 class BitibeAffiliateProgram extends Module
 {
@@ -22,6 +55,10 @@ class BitibeAffiliateProgram extends Module
 		$this->bootstrap = true;
 
 		parent::__construct();
+
+		if(file_exists(__DIR__."/affiliate/amazonAPI.php")){
+			$this->amazon_allowed = true;
+		}
 
 		$this->displayName = $this->l('BitibeAffiliateProgram');
 		$this->description = $this->l('Affilite programs wirh e-commerce');
@@ -52,11 +89,6 @@ class BitibeAffiliateProgram extends Module
 		}else{
 			$this->warning = $this->l('Missing configuration. Please configure module ' . $this->class_module_name);
 		}
-
-		if(file_exists("./amazonAPI.php")){
-			$this->amazon_allowed = true;
-		}
-
 
 	}
 
@@ -174,186 +206,246 @@ class BitibeAffiliateProgram extends Module
 	{
 		$output = null;
 
-		if (Tools::isSubmit('submit'.$this->name))
+
+
+		if ($this->amazon_allowed == true && Tools::isSubmit('submit'.$this->name))
 		{
 
-				$access_key = strval(Tools::getValue('Bitibe_amazon_access_key'));
-				$secret_key = strval(Tools::getValue('Bitibe_amazon_secret_key'));
-				$affiliate_id = strval(Tools::getValue('Bitibe_amazon_affiliate_id'));
+			$access_key = strval(Tools::getValue('Bitibe_amazon_access_key'));
+			$secret_key = strval(Tools::getValue('Bitibe_amazon_secret_key'));
+			$affiliate_id = strval(Tools::getValue('Bitibe_amazon_affiliate_id'));
 
-				if (!empty($access_key))
-				{
-					Configuration::updateValue('Bitibe_amazon_access_key', $access_key);
-				}else{
-					$output .= $this->displayError($this->l('Access key can not be empty'));
-				}
+			if (!empty($access_key))
+			{
+				Configuration::updateValue('Bitibe_amazon_access_key', $access_key);
+			}else{
+				$output .= $this->displayError($this->l('Access key can not be empty'));
+			}
 
-				if (!empty($secret_key))
-				{
-					Configuration::updateValue('Bitibe_amazon_secret_key', $secret_key);
-				}else{
-                                        $output .= $this->displayError($this->l('Secret key can not be empty'));
-                                }
+			if (!empty($secret_key))
+			{
+				Configuration::updateValue('Bitibe_amazon_secret_key', $secret_key);
+			}else{
+				$output .= $this->displayError($this->l('Secret key can not be empty'));
+			}
 
-				if (!empty($affiliate_id))
-				{
-					Configuration::updateValue('Bitibe_amazon_affiliate_id', $affiliate_id);
-				}else{
-                                        $output .= $this->displayError($this->l('Affiliate key can not be empty'));
-                                }
+			if (!empty($affiliate_id))
+			{
+				Configuration::updateValue('Bitibe_amazon_affiliate_id', $affiliate_id);
+			}else{
+				$output .= $this->displayError($this->l('Affiliate key can not be empty'));
+			}
 		}
 
-		if (Tools::isSubmit('amazonsubmit'.$this->name))
-                {
-				$is_valid = true;
-                                $amazon_category = strval(Tools::getValue('Bitibe_amazon_category'));
-                                $search_keyword = strval(Tools::getValue('Bitibe_amazon_keyword'));
-                                $amazon_count = strval(Tools::getValue('Bitibe_amazon_fetch_count'));
-				$prestashop_category = strval(Tools::getValue('Bitibe_amazon_prestashop_category'));
+		if ($this->amazon_allowed == true && Tools::isSubmit('amazonsubmit'.$this->name))
+		{
+			$access_key = NULL;
+			$secret_key = NULL;
+			$affiliate_id = NULL;
+			$is_valid = true;
+			$amazon_category = strval(Tools::getValue('Bitibe_amazon_category'));
+			$search_keyword = strval(Tools::getValue('Bitibe_amazon_keyword'));
+			$amazon_count = strval(Tools::getValue('Bitibe_amazon_fetch_count'));
+			$prestashop_category = strval(Tools::getValue('Bitibe_amazon_prestashop_category'));
 
-				if(empty($amazon_category)){
-                                        $output .= $this->displayError($this->l('Please select Amazon Category'));
+			if(empty($amazon_category)){
+				$output .= $this->displayError($this->l('Please select Amazon Category'));
+				$is_valid = false;
+			}
+
+			if(empty($search_keyword)){
+				$output .= $this->displayError($this->l('Search keyword can not be empty'));
+				$is_valid = false;
+			}
+
+			if(empty($amazon_count)){
+				$output .= $this->displayError($this->l('Please ennter number of products to be fetched'));
+				$is_valid = false;
+			}else if(!is_numeric($amazon_count)){
+				$output .= $this->displayError($this->l('Number of products to be fetched is not numeric'));
+				$is_valid = false;
+			}
+
+			if(empty($prestashop_category)){
+				$output .= $this->displayError($this->l('Please select Prestashop Category'));
+				$is_valid = false;
+			}
+
+			if($is_valid){
+				$access_key = Configuration::get('Bitibe_amazon_access_key');
+				$secret_key = Configuration::get('Bitibe_amazon_secret_key');
+				$affiliate_id = Configuration::get('Bitibe_amazon_affiliate_id');
+
+
+				if(empty($access_key) || empty($secret_key) || empty($affiliate_id)){
+					$output .= $this->displayError($this->l('Missing configuration. Please set Amazon setting'));
 					$is_valid = false;
 				}
+			}
 
-				if(empty($search_keyword)){
-                                        $output .= $this->displayError($this->l('Search keyword can not be empty'));
-					$is_valid = false;
-                                }
 
-				if(empty($amazon_count)){
-                                        $output .= $this->displayError($this->l('Please ennter number of products to be fetched'));
-					$is_valid = false;
-                                }else if(!is_numeric($amazon_count)){
-					$output .= $this->displayError($this->l('Number of products to be fetched is not numeric'));
-					$is_valid = false;
+			if($is_valid){
+				$amazon = new amazonAPI($access_key, $secret_key, $affiliate_id);
+
+				$arr = array();
+				$page_count = $amazon_count/10;
+				if($page_count == 0){
+					$page_count = 1;
 				}
 
-				if(empty($prestashop_category)){
-					$output .= $this->displayError($this->l('Please select Prestashop Category'));
-					$is_valid = false;
+				for($i=1; $i<=$page_count; $i++){
+					$arr = $amazon->searchProductHelper($search_keyword, $amazon_category, $i);
+
+					foreach($arr as $p){
+
+						if($this->fetchAsin($p['asin']) == 0){
+							$short_description = "<ul>";			
+							foreach($p['description'] as $desc){
+								$desc = trim($desc);
+								$short_description .= "<li>{$desc}</li>";
+							}
+							$short_description .="</ul><br><br>";
+							$short_description .= "<p><a href={$p['link']} target='_blank' class='btn btn-default'>BUY NOW</a></p>";
+
+							$product_id = $this->addProduct($p['name'], $prestashop_category, $p['price'], $short_description);
+
+							if($product_id != 0){
+								$this->updateProduct("amazon_asin", $p['asin'], $product_id);
+								$this->updateProduct("affiliate_website", "amazon.com", $product_id);
+
+								$imageAdd = new ImageAdd();
+
+								try{
+									$imageAdd->insertImageInPrestashop($product_id, $p['images'], $p['name']);
+								}catch(Exception $e){
+
+								}
+							}
+						}
+					}
 				}
+			}
+		}
 
-				if($is_valid){
 
-
-				}
-                }
-
-		return $output.$this->displayForm().$this->amazonForm();
+		if($this->amazon_allowed == true){ 
+			$output.=$this->amazonConfig().$this->amazonForm();
+		}
+		return $output;
 	}
 
 	public function amazonForm()
-        {
+	{
 		$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 
 		$presta_category = array();
-                $fetched_categ = $this->fetchPrestashopCategory();
+		$fetched_categ = $this->fetchPrestashopCategory();
 
-                foreach ($fetched_categ as $categ)
-                {
-                        $presta_category[] = array(
-                                        "id_option" => (int)$categ['id_category'],
-                                        "name" => $categ['name']
-                                        );
-                }
+		foreach ($fetched_categ as $categ)
+		{
+			$presta_category[] = array(
+					"id_option" => (int)$categ['id_category'],
+					"name" => $categ['name']
+					);
+		}
 
-                $amazon_category = array();
-                $fetched_categ = $this->fetchAffiliateCategory('amazon.com');
+		$amazon_category = array();
+		$fetched_categ = $this->fetchAffiliateCategory('amazon.com');
 
-                foreach ($fetched_categ as $categ)
-                {
-                        $amazon_category[] = array(
-                                        "id_option" => $categ['category_name'],
-                                        "name" => $categ['category_name']
-                                        );
-                }
+		foreach ($fetched_categ as $categ)
+		{
+			$amazon_category[] = array(
+					"id_option" => $categ['category_name'],
+					"name" => $categ['category_name']
+					);
+		}
 
 		$fields_form[0]['form'] = array(
-                                'legend' => array(
-                                        'title' => $this->l('Amazon Fetch Product'),
-                                        ),
-                                'input' => array(
-                                        array(
-                                                'type' => 'select',
-                                                'label' => $this->l('Search in Category'),
-                                                'desc' => $this->l('Select Amazon Category'),
-                                                'name' => 'Bitibe_amazon_category',
-                                                'required' => true,
-                                                'options' => array(
-                                                        'query' => $amazon_category,
-                                                        'id' => 'id_option',
-                                                        'name' => 'name'
-                                                        )
-                                             ),
-                                        array(
-                                                'type' => 'text',
-                                                'label' => $this->l('Search keyword for Amazon'),
-                                                'name' => 'Bitibe_amazon_keyword',
-                                                'required' => true
-                                             ),
-                                        array(
-                                                'type' => 'text',
-                                                'label' => $this->l('Number of products to be fetched'),
-                                                'name' => 'Bitibe_amazon_fetch_count',
-                                                'required' => true
-                                             ),
-                                        array(
-                                                        'type' => 'select',
-                                                        'label' => $this->l('Save in Category'),
-                                                        'desc' => $this->l('Choose your store category'),
-                                                        'name' => 'Bitibe_amazon_prestashop_category',
-                                                        'required' => true,
-                                                        'options' => array(
-                                                                'query' => $presta_category,
-                                                                'id' => 'id_option',
-                                                                'name' => 'name'
-                                                                )
-                                             )
-                                                ),
-						'submit' => array(
-                                                        'title' => $this->l('Save'),
-                                                        'class' => 'btn btn-default pull-right'
-                                                        )
-                                                );
+				'legend' => array(
+					'title' => $this->l('Amazon Fetch Product'),
+					),
+				'input' => array(
+					array(
+						'type' => 'select',
+						'label' => $this->l('Search in Category'),
+						'desc' => $this->l('Select Amazon Category'),
+						'name' => 'Bitibe_amazon_category',
+						'required' => true,
+						'options' => array(
+							'query' => $amazon_category,
+							'id' => 'id_option',
+							'name' => 'name'
+							)
+					     ),
+					array(
+						'type' => 'text',
+						'label' => $this->l('Search keyword for Amazon'),
+						'name' => 'Bitibe_amazon_keyword',
+						'required' => true
+					     ),
+					array(
+						'type' => 'text',
+						'label' => $this->l('Number of products to be fetched'),
+						'desc' => $this->l('Choose multiple of 10'),
+						'name' => 'Bitibe_amazon_fetch_count',
+						'required' => true
+					     ),
+					array(
+							'type' => 'select',
+							'label' => $this->l('Save in Category'),
+							'desc' => $this->l('Choose your store category'),
+							'name' => 'Bitibe_amazon_prestashop_category',
+							'required' => true,
+							'options' => array(
+								'query' => $presta_category,
+								'id' => 'id_option',
+								'name' => 'name'
+								)
+					     )
+						),
+					'submit' => array(
+							'title' => $this->l('Save'),
+							'class' => 'btn btn-default pull-right'
+							)
+						);
 
 
-                $helper = new HelperForm();
+		$helper = new HelperForm();
 
-                // Module, token and currentIndex
-                $helper->module = $this;
-                $helper->name_controller = $this->name;
-                $helper->token = Tools::getAdminTokenLite('AdminModules');
-                $helper->currentIndex = AdminController::$currentIndex.'&configure='.$this->name;
-                // Language
-                $helper->default_form_language = $default_lang;
-                $helper->allow_employee_form_lang = $default_lang;
+		// Module, token and currentIndex
+		$helper->module = $this;
+		$helper->name_controller = $this->name;
+		$helper->token = Tools::getAdminTokenLite('AdminModules');
+		$helper->currentIndex = AdminController::$currentIndex.'&configure='.$this->name;
+		// Language
+		$helper->default_form_language = $default_lang;
+		$helper->allow_employee_form_lang = $default_lang;
 
-                // Title and toolbar
-                $helper->title = $this->displayName;
-                $helper->show_toolbar = true;        // false -> remove toolbar
-                $helper->toolbar_scroll = true;      // yes - > Toolbar is always visible on the top of the screen.
-                $helper->submit_action = 'amazonsubmit'.$this->name;
-                $helper->toolbar_btn = array(
-                                'save' =>
-                                array(
-                                        'desc' => $this->l('Fetch'),
-                                        'href' => AdminController::$currentIndex.'&configure='.$this->name.'&save'.$this->name.
-                                        '&token='.Tools::getAdminTokenLite('AdminModules'),
-                                     ),
-                                'back' => array(
-                                        'href' => AdminController::$currentIndex.'&token='.Tools::getAdminTokenLite('AdminModules'),
-                                        'desc' => $this->l('Back to list')
-                                        )
-                                );
+		// Title and toolbar
+		$helper->title = $this->displayName;
+		$helper->show_toolbar = true;        // false -> remove toolbar
+		$helper->toolbar_scroll = true;      // yes - > Toolbar is always visible on the top of the screen.
+		$helper->submit_action = 'amazonsubmit'.$this->name;
+		$helper->toolbar_btn = array(
+				'save' =>
+				array(
+					'desc' => $this->l('Fetch'),
+					'href' => AdminController::$currentIndex.'&configure='.$this->name.'&save'.$this->name.
+					'&token='.Tools::getAdminTokenLite('AdminModules'),
+				     ),
+				'back' => array(
+					'href' => AdminController::$currentIndex.'&token='.Tools::getAdminTokenLite('AdminModules'),
+					'desc' => $this->l('Back to list')
+					)
+				);
 
-                $helper->fields_value['Bitibe_amazon_fetch_count'] = 1000;
-                $helper->fields_value['amazon_product'] = 'true';
+		$helper->fields_value['Bitibe_amazon_fetch_count'] = 20;
+		$helper->fields_value['amazon_product'] = 'true';
 
-                return $helper->generateForm($fields_form);
+		return $helper->generateForm($fields_form);
 	}
 
-	public function displayForm()
+	public function amazonConfig()
 	{
 		$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 
@@ -380,12 +472,12 @@ class BitibeAffiliateProgram extends Module
 						'name' => 'Bitibe_amazon_affiliate_id',
 						'required' => true
 					     )
-						),
-					'submit' => array(
-							'title' => $this->l('Save'),
-							'class' => 'btn btn-default pull-right'
-							)
-						);
+					),
+				'submit' => array(
+						'title' => $this->l('Save'),
+						'class' => 'btn btn-default pull-right'
+						)
+					);
 
 
 		$helper = new HelperForm();
@@ -426,54 +518,38 @@ class BitibeAffiliateProgram extends Module
 		return $helper->generateForm($fields_form);
 	}
 
-	public function addProduct($name, $category_id, $price, $short_description, $image_url){
+	public function addProduct($name, $category_id, $price, $short_description){
+		$id_product = 0;
 
 		$product = new Product();
 		$product->ean13 = 0;
-		$product->name = array((int)Configuration::get('PS_LANG_DEFAULT') =>  'Test product');;
-		//$product->link_rewrite = 'Test product';
-		$product->id_category = 11;
-		$product->id_category_default = 11;
+		$product->name = array((int)Configuration::get('PS_LANG_DEFAULT') =>  $name);;
+		//$product->link_rewrite = 'amazon_'.$name;
+		$product->id_category = $category_id;
+		$product->id_category_default = $category_id;
 		$product->redirect_type = '404';
-		$product->price = 22;
+		$product->price = $price;
 		$product->quantity = 1;
 		$product->minimal_quantity = 1;
 		$product->show_price = 1;
 		$product->on_sale = 0;
 		$product->online_only = 1;
-		$product->meta_keywords = 'test';
 		$product->is_virtual=0;
 		$product->available_for_order = 0;
-		$product->description = "descriptiom";
-		$product->description_short = "short description";
+		//$product->description = $short_description;
+		$product->description_short = $short_description;
 		$product->available_now = 0;	
-		$product->add();
-		$product->addToCategories(array(11));
 
-		$shops = Shop::getShops(true, null, true);    
-		$image = new Image();
-		$id_product = $this->maxProductId();	
+		try{
+			$product->add();
+			$product->addToCategories(array($category_id));
 
+			$id_product = $this->maxProductId();	
+		}catch(Exception $e){
+			$id_product = 0;
+		}
 
-		$image->id_product = $id_product;
-		$image->position = Image::getHighestPosition($id_product) + 1;
-		$image->cover = true; // or false;
-
-		$url = "https://images-na.ssl-images-amazon.com/images/G/01/gateway/yiyiz/81QYnUWW8OL._UX984_SX984_CB531399255_.jpg";
-		//	AdminImportController::copyImg($id_product, null, $url, 'products', false);
-
-
-		/**	if (($image->validateFields(false, true)) === true && ($image->validateFieldsLang(false, true)) === true && $image->add())
-		  {
-
-		  $image->associateTo($shops);
-		  $url = "https://images-na.ssl-images-amazon.com/images/G/01/gateway/yiyiz/81QYnUWW8OL._UX984_SX984_CB531399255_.jpg";
-
-		  if (!AdminImportController::copyImg($id_product, null, $url, 'products', false))
-		  {
-		  $image->delete();
-		  }
-		  }**/
+		return $id_product;
 	}
 
 	private function maxProductId()
@@ -485,31 +561,6 @@ class BitibeAffiliateProgram extends Module
 		return Db::getInstance()->executeS($sql)[0]['product_id'];
 	}
 
-	private function queryAmazon($searchString, $category){
-
-		$config = Configuration::getMultiple(array(
-					'Bitibe_amazon_access_key',
-					'Bitibe_amazon_secret_key',
-					'Bitibe_amazon_affiliate_id'
-					));
-
-		$amazon = new amazonAPI(
-				$config['Bitibe_amazon_access_key'],
-				$config['Bitibe_amazon_secret_key'],
-				$config['Bitibe_amazon_affiliate_id'],
-				0,
-				"com"
-				);
-
-		$listing = $amazon->searchProducts($searchString, $category);
-
-		echo $item.": total products - ".count($listing)."<br />";
-
-		foreach ($listing as $i)
-		{
-			echo "\n\n";
-		}
-	}
 
 	private function fetchPrestashopCategory(){
 		$lang_shop = (int) $this->context->language->id;
@@ -524,12 +575,53 @@ class BitibeAffiliateProgram extends Module
 
 	private function fetchAffiliateCategory($site){
 		$sql = new DbQuery();
-                $sql->select('category_name, category_id');
+		$sql->select('category_name, category_id');
 		$sql->from('affiliate_category', 'a');
 		$sql->where("a.site_name = '". pSQL($site)."'");
-                $sql->orderBy('category_name');
+		$sql->orderBy('category_name');
 
-                return Db::getInstance()->executeS($sql);
+		return Db::getInstance()->executeS($sql);
 
+	}
+
+	private function fetchAsin($asin){
+		$sql = new DbQuery();
+		$sql->from('product');
+		$sql->select('count(*) as count');
+		$sql->where("amazon_asin = '".$asin."'");
+
+		return Db::getInstance()->executeS($sql)[0]['count'];		
+	}
+
+	private function updateProduct($column, $val, $product_id){
+		$sql = "update "._DB_PREFIX_."product set  {$column} = '{$val}' WHERE id_product = '{$product_id}'";
+		Db::getInstance()->execute($sql);
+	}
+
+	private function insertImageInPrestashop($id_product, $url, $name_photo)
+	{
+		$shops = Shop::getShops(true, null, true);
+		$image = new ImageCore();
+		$image->id_product = $id_product;
+		$image->position = Image::getHighestPosition($id_product) + 1;
+		$image->cover = true;
+		$tmp = explode(".", $name_photo);
+		$name_photo_product = "";
+		$name_for_legend = "";
+		if (count($tmp) == 1) {
+			$name_photo_product = trim($url) . $name_photo . ".jpg";
+			$name_for_legend = $name_photo . ".jpg";
+		} else {
+			$name_photo_product = trim($url) . $name_photo;
+			$name_for_legend = $name_photo;
+		}
+		$image->legend = array('1' => trim($name_for_legend));
+		if ($image->validateFields(false, true) === true && $image->validateFieldsLang(false, true) === true && $image->add()) {
+			$image->associateTo($shops);
+			if (!$this->copyImg($id_product, $image->id, $name_photo_product, 'products')) {
+				$image->delete();
+			}
+		}
+		return $image->id;
 	}
 }
