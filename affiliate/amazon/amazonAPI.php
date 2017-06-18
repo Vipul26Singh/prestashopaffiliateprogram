@@ -5,7 +5,7 @@ class amazonAPI
 	private $public_key;
 	private $private_key;
 	private $associate_tag;
-	public $region;
+	private $region;
 
 	public function __construct($a, $b, $c)
 	{
