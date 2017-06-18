@@ -5,13 +5,11 @@ include("./amazonAPI.php");
 $amazon = new amazonAPI(
 	"AKIAJQVUBYVW765CZUPQ", 
 	"sVey9u7Mq2sDQP2JpnDcJhZ6fYGAGdVw8IB9QCvJ",
-	"vipulsinghtha-20",
-	0,
-	"com"	
+	"vipulsinghtha-20"
 	);
 
-	$item = "press";
-	$listing = $amazon->searchProducts($item, "All");
+	$item = "";
+	$listing = $amazon->searchProducts($item, "allascascas", 1000);
 
 	echo $item.": total products - ".count($listing)."<br />";
 	
