@@ -295,6 +295,10 @@ class BitibeAffiliateProgram extends Module
 
 
 	public function addProduct($name, $category_id, $price, $short_description){
+		if(empty($name) || empty($category_id) || empty($price)){
+			return 0;
+		}
+
 		$id_product = 0;
 
 		$product = new Product();
