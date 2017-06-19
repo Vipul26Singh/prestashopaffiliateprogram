@@ -25,8 +25,11 @@ class ImageAdd extends AdminImportController
                         $image->associateTo($shops);
                         if (!$this->copyImg($id_product, $image->id, $name_photo_product, 'products')) {
                                 $image->delete();
-                        }
-                }
+				return 0;
+                        }else{
+				return 0;
+			}
+		}
                 return $image->id;
         }
 }

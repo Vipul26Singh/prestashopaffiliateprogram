@@ -151,10 +151,15 @@ class AliexpressConfig
 
 								$imageAdd = new ImageAdd();
 								try{
-									$imageAdd->insertImageInPrestashop($product_id, $p['images'], $p['name']);
-								}catch(Exception $e){
+									$image_id = $imageAdd->insertImageInPrestashop($product_id, $p['images'], $p['name']);
+									if($image_id == 0){
+                                                                                $this->this_module->deleteProduct($product_id);
+                                                                        }
+                                                                }catch(Exception $e){
+                                                                                $this->this_module->deleteProduct($product_id);
+                                                                }
 
-								}
+		
 							}
 						}
 					}

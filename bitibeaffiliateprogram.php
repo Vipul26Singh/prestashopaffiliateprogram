@@ -110,7 +110,6 @@ class BitibeAffiliateProgram extends Module
 	}
 
 	private function installData(){
-		if($this->amazon_allowed == true){
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('All'), 'site_name'  => 'amazon.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Wine'), 'site_name'  => 'amazon.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Wireless'), 'site_name'  => 'amazon.com'));
@@ -172,9 +171,7 @@ class BitibeAffiliateProgram extends Module
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Blended'), 'site_name'  => 'amazon.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('HealthPersonalCare'), 'site_name'  => 'amazon.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Classical'), 'site_name'  => 'amazon.com'));
-		}
 
-		if($this->ebay_allowed == true){
 
 			Db::getInstance()->insert('affiliate_category', array( 'category_id' => pSQL('-1'), 'category_name' => pSQL('All'), 'site_name'  => 'ebay.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_id' => pSQL('20081'), 'category_name' => pSQL('Antiques'), 'site_name'  => 'ebay.com'));
@@ -211,9 +208,6 @@ class BitibeAffiliateProgram extends Module
 			Db::getInstance()->insert('affiliate_category', array( 'category_id' => pSQL('3252'), 'category_name' => pSQL('Travel'), 'site_name'  => 'ebay.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_id' => pSQL('1249'), 'category_name' => pSQL('Video Games & Consoles'), 'site_name'  => 'ebay.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_id' => pSQL('99'), 'category_name' => pSQL('Everything Else'), 'site_name'  => 'ebay.com'));
-		}
-
-		if($this->aliexpress_allowed == true){
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Automobiles and Motorcycles'), 'category_id' => pSQL('34'), 'site_name'  => 'aliexpress.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Beauty and Health'), 'category_id' => pSQL('66'), 'site_name'  => 'aliexpress.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Computer and Office'), 'category_id' => pSQL('7'), 'site_name'  => 'aliexpress.com'));
@@ -243,8 +237,6 @@ class BitibeAffiliateProgram extends Module
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Travel and Coupon Services'), 'category_id' => pSQL('200003498'), 'site_name'  => 'aliexpress.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Watches'), 'category_id' => pSQL('1511'), 'site_name'  => 'aliexpress.com'));
 			Db::getInstance()->insert('affiliate_category', array( 'category_name' => pSQL('Weddings and Events'), 'category_id' => pSQL('320'), 'site_name'  => 'aliexpress.com'));
-
-		}
 
 		return true;
 	}
@@ -379,6 +371,11 @@ class BitibeAffiliateProgram extends Module
 
                 return Db::getInstance()->executeS($sql)[0]['product_id'];
         }
+
+	public function deleteProduct($product_id){
+		$product = new ProductCore($productId, false);
+		return $product->delete();
+	}
 
 
 }
